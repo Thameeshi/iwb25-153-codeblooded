@@ -1,0 +1,11 @@
+{
+  "name": "Cloud Cost Optimizer Lite",
+  "image": "ballerina/ballerina:2201.12.0",
+  "remoteUser": "root",
+  "customizations": {
+    "vscode": {
+      "extensions": ["WSO2.ballerina"]
+    }
+  },
+  "postCreateCommand": "chmod -R 777 /workspaces && mkdir -p /workspaces/cloud-cost-optimizer-lite/target"
+}

@@ -1,0 +1,9 @@
+--- Cloud Cost Optimizer Report ---
+VM Hours: 100.0, Storage: 200.0 GB, Bandwidth: 50.0 GB
+
+--- Estimated Cost Breakdown ---
+AWS -> VM: $5.0, Storage: $4.6, Bandwidth: $4.5, Total: $14.1
+Azure -> VM: $4.5, Storage: $4.0, Bandwidth: $4.25, Total: $12.75
+GCP -> VM: $4.8, Storage: $4.2, Bandwidth: $4.0, Total: $13.0
+
+💡 Cheapest Provider: Azure ($12.75)
