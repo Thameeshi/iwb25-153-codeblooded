@@ -30,20 +30,65 @@ function getPricing(string provider) returns map<float> {
     return {"vm": 0.05, "storage": 0.01, "network": 0.02};
 }
 
-final CloudResource[] resources = [
-    {
-        id: "i-12345", name: "web-server-01", resourceType: "EC2",
-        cpuUsage: 8.5, memoryUsage: 15.2, storageUsage: 30.0, costPerMonth: 120.0
-    },
-    {
-        id: "i-67890", name: "database-server", resourceType: "EC2",
-        cpuUsage: 75.0, memoryUsage: 82.3, storageUsage: 65.0, costPerMonth: 200.0
-    },
-    {
-        id: "bucket-1", name: "static-files", resourceType: "S3",
-        cpuUsage: 0.0, memoryUsage: 0.0, storageUsage: 85.0, costPerMonth: 40.0
+// Generate dynamic resources based on calculator inputs
+function generateResourcesFromInputs(string provider, float vmHours, float storage, float network) returns CloudResource[] {
+    map<float> rates = getPricing(provider);
+    float vmRate = rates["vm"] ?: 0.05;
+    float storageRate = rates["storage"] ?: 0.01;
+    float networkRate = rates["network"] ?: 0.02;
+    
+    float vmCost = vmHours * vmRate;
+    float storageCost = storage * storageRate;
+    float networkCost = network * networkRate;
+    
+    // Simulate CPU/Memory usage based on VM hours (more hours = higher usage)
+    float simulatedCpuUsage = vmHours > 500.0 ? 85.0 : (vmHours > 200.0 ? 45.0 : 15.0);
+    float simulatedMemoryUsage = vmHours > 500.0 ? 78.0 : (vmHours > 200.0 ? 52.0 : 25.0);
+    
+    CloudResource[] resources = [];
+    
+    // VM Resource
+    if vmHours > 0.0 {
+        resources.push({
+            id: "vm-001",
+            name: provider + "-instance",
+            resourceType: "VM",
+            cpuUsage: simulatedCpuUsage,
+            memoryUsage: simulatedMemoryUsage,
+            storageUsage: 0.0,
+            costPerMonth: vmCost
+        });
     }
-];
+    
+    // Storage Resource
+    if storage > 0.0 {
+        float storageUtilization = storage > 200.0 ? 85.0 : (storage > 50.0 ? 60.0 : 35.0);
+        resources.push({
+            id: "storage-001",
+            name: provider + "-storage",
+            resourceType: "Storage",
+            cpuUsage: 0.0,
+            memoryUsage: 0.0,
+            storageUsage: storageUtilization,
+            costPerMonth: storageCost
+        });
+    }
+    
+    // Network Resource
+    if network > 0.0 {
+        resources.push({
+            id: "network-001",
+            name: provider + "-network",
+            resourceType: "Network",
+            cpuUsage: 0.0,
+            memoryUsage: 0.0,
+            storageUsage: 0.0,
+            costPerMonth: networkCost
+        });
+    }
+    
+    return resources;
+}
 
 function analyzeResource(CloudResource res) returns AISuggestion {
     string recommendation;
@@ -51,50 +96,77 @@ function analyzeResource(CloudResource res) returns AISuggestion {
     float savings = 0.0;
     string[] actions = [];
 
-    if res.resourceType == "EC2" {
+    if res.resourceType == "VM" {
         if res.cpuUsage < 10.0 {
-            recommendation = "Instance underutilized - consider downsizing";
+            recommendation = "VM severely underutilized - consider downsizing or spot instances";
             confidence = "High";
-            savings = res.costPerMonth * 0.6;
-            actions = ["Downsize instance", "Use spot instances"];
+            savings = res.costPerMonth * 0.7;
+            actions = ["Downsize to smaller instance", "Use spot instances", "Consider serverless"];
         } else if res.cpuUsage < 30.0 {
-            recommendation = "Moderate optimization opportunity";
+            recommendation = "VM underutilized - optimization opportunity available";
+            confidence = "High";
+            savings = res.costPerMonth * 0.4;
+            actions = ["Right-size instance", "Use reserved instances"];
+        } else if res.cpuUsage < 60.0 {
+            recommendation = "VM moderately utilized - minor optimization possible";
             confidence = "Medium";
-            savings = res.costPerMonth * 0.3;
-            actions = ["Right-size instance"];
+            savings = res.costPerMonth * 0.15;
+            actions = ["Monitor usage patterns", "Consider reserved pricing"];
         } else if res.cpuUsage > 80.0 {
-            recommendation = "Consider scaling up for better performance";
+            recommendation = "VM highly utilized - consider scaling for performance";
             confidence = "High";
             savings = 0.0;
-            actions = ["Add load balancer", "Scale horizontally"];
+            actions = ["Add auto-scaling", "Distribute load", "Monitor performance"];
         } else {
-            recommendation = "Resource performing optimally";
+            recommendation = "VM optimally utilized";
             confidence = "Low";
             savings = 0.0;
             actions = ["Continue monitoring"];
         }
-    } else if res.resourceType == "S3" {
+    } else if res.resourceType == "Storage" {
         if res.storageUsage > 90.0 {
-            recommendation = "Storage nearly full - archive old data";
+            recommendation = "Storage nearly full - immediate action needed";
             confidence = "High";
             savings = 0.0;
-            actions = ["Archive old files", "Set lifecycle policies"];
+            actions = ["Archive old data", "Implement lifecycle policies", "Add capacity"];
         } else if res.storageUsage < 40.0 {
-            recommendation = "Consider cheaper storage tier";
+            recommendation = "Storage underutilized - consider cheaper tiers";
+            confidence = "Medium";
+            savings = res.costPerMonth * 0.3;
+            actions = ["Move to infrequent access tier", "Clean unused data", "Compress files"];
+        } else if res.storageUsage > 70.0 {
+            recommendation = "Storage well utilized - monitor growth";
+            confidence = "Low";
+            savings = res.costPerMonth * 0.1;
+            actions = ["Set up monitoring alerts", "Plan capacity"];
+        } else {
+            recommendation = "Storage appropriately utilized";
+            confidence = "Low";
+            savings = 0.0;
+            actions = ["Continue monitoring"];
+        }
+    } else if res.resourceType == "Network" {
+        if res.costPerMonth > 50.0 {
+            recommendation = "High network costs - optimize data transfer";
             confidence = "Medium";
             savings = res.costPerMonth * 0.25;
-            actions = ["Move to IA storage", "Clean unused data"];
+            actions = ["Use CDN", "Compress data", "Cache frequently accessed content"];
+        } else if res.costPerMonth > 20.0 {
+            recommendation = "Moderate network usage - minor optimizations available";
+            confidence = "Low";
+            savings = res.costPerMonth * 0.1;
+            actions = ["Review data transfer patterns", "Optimize API calls"];
         } else {
-            recommendation = "Storage usage is appropriate";
+            recommendation = "Network usage is cost-effective";
             confidence = "Low";
             savings = 0.0;
             actions = ["Continue monitoring"];
         }
     } else {
-        recommendation = "Manual review needed";
+        recommendation = "Manual review recommended";
         confidence = "Low";
         savings = 0.0;
-        actions = ["Manual check"];
+        actions = ["Manual analysis required"];
     }
 
     return {
@@ -108,7 +180,48 @@ function analyzeResource(CloudResource res) returns AISuggestion {
 
 service / on new http:Listener(8081) {
 
-    resource function get .() returns http:Response {
+    resource function get .(http:Request req) returns http:Response {
+        // Get parameters from URL
+        map<string[]> params = req.getQueryParams();
+        
+        string provider = "AWS";
+        float vmHours = 744.0;
+        float storage = 100.0;
+        float network = 50.0;
+        
+        // Extract parameters
+        string[]? providerParam = params["provider"];
+        if providerParam is string[] && providerParam.length() > 0 {
+            provider = providerParam[0];
+        }
+        
+        string[]? vmParam = params["vm"];
+        if vmParam is string[] && vmParam.length() > 0 {
+            float|error vmResult = float:fromString(vmParam[0]);
+            if vmResult is float {
+                vmHours = vmResult;
+            }
+        }
+        
+        string[]? storageParam = params["storage"];
+        if storageParam is string[] && storageParam.length() > 0 {
+            float|error storageResult = float:fromString(storageParam[0]);
+            if storageResult is float {
+                storage = storageResult;
+            }
+        }
+        
+        string[]? networkParam = params["network"];
+        if networkParam is string[] && networkParam.length() > 0 {
+            float|error networkResult = float:fromString(networkParam[0]);
+            if networkResult is float {
+                network = networkResult;
+            }
+        }
+
+        // Generate resources based on actual inputs
+        CloudResource[] resources = generateResourcesFromInputs(provider, vmHours, storage, network);
+        
         float totalCost = 0.0;
         float totalSavings = 0.0;
         
@@ -138,6 +251,13 @@ body {
 }
 h1 { color: #2c3e50; text-align: center; font-size: 2.5rem; margin-bottom: 10px; }
 .subtitle { text-align: center; color: #7f8c8d; margin-bottom: 30px; }
+.input-summary { 
+    background: #ecf0f1; padding: 15px; border-radius: 10px; margin-bottom: 20px;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;
+}
+.input-item { text-align: center; }
+.input-label { font-size: 0.9rem; color: #7f8c8d; margin-bottom: 5px; }
+.input-value { font-size: 1.2rem; font-weight: bold; color: #2c3e50; }
 .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin: 20px 0; }
 .metric { 
     background: linear-gradient(45deg, #667eea, #764ba2); color: white;
@@ -167,13 +287,32 @@ h1 { color: #2c3e50; text-align: center; font-size: 2.5rem; margin-bottom: 10px;
         <h1>CloudOptimizer Pro</h1>
         <p class="subtitle">Smart Cloud Cost Management Dashboard</p>
         
+        <div class="input-summary">
+            <div class="input-item">
+                <div class="input-label">Provider</div>
+                <div class="input-value">${provider}</div>
+            </div>
+            <div class="input-item">
+                <div class="input-label">VM Hours</div>
+                <div class="input-value">${vmHours}</div>
+            </div>
+            <div class="input-item">
+                <div class="input-label">Storage (GB)</div>
+                <div class="input-value">${storage}</div>
+            </div>
+            <div class="input-item">
+                <div class="input-label">Network (GB)</div>
+                <div class="input-value">${network}</div>
+            </div>
+        </div>
+        
         <div class="metrics">
             <div class="metric">
-                <div class="metric-value">$${totalCost}</div>
+                <div class="metric-value">$${totalCost.toString()}</div>
                 <div class="metric-label">Monthly Cost</div>
             </div>
             <div class="metric">
-                <div class="metric-value">$${totalSavings}</div>
+                <div class="metric-value">$${totalSavings.toString()}</div>
                 <div class="metric-label">Potential Savings</div>
             </div>
             <div class="metric">
@@ -183,8 +322,8 @@ h1 { color: #2c3e50; text-align: center; font-size: 2.5rem; margin-bottom: 10px;
         </div>
         
         <div class="nav-buttons">
-            <a href="/ai-suggestions" class="nav-btn">AI Suggestions</a>
-            <a href="/report" class="nav-btn">Cost Report</a>
+            <a href="/ai-suggestions?provider=${provider}&vm=${vmHours}&storage=${storage}&network=${network}" class="nav-btn">AI Suggestions</a>
+            <a href="/report?provider=${provider}&vm=${vmHours}&storage=${storage}&network=${network}" class="nav-btn">Cost Report</a>
         </div>
     </div>
 </div>
@@ -197,7 +336,47 @@ h1 { color: #2c3e50; text-align: center; font-size: 2.5rem; margin-bottom: 10px;
         return res;
     }
 
-    resource function get ai\-suggestions() returns http:Response {
+    resource function get ai\-suggestions(http:Request req) returns http:Response {
+        // Get parameters from URL
+        map<string[]> params = req.getQueryParams();
+        
+        string provider = "AWS";
+        float vmHours = 744.0;
+        float storage = 100.0;
+        float network = 50.0;
+        
+        // Extract parameters
+        string[]? providerParam = params["provider"];
+        if providerParam is string[] && providerParam.length() > 0 {
+            provider = providerParam[0];
+        }
+        
+        string[]? vmParam = params["vm"];
+        if vmParam is string[] && vmParam.length() > 0 {
+            float|error vmResult = float:fromString(vmParam[0]);
+            if vmResult is float {
+                vmHours = vmResult;
+            }
+        }
+        
+        string[]? storageParam = params["storage"];
+        if storageParam is string[] && storageParam.length() > 0 {
+            float|error storageResult = float:fromString(storageParam[0]);
+            if storageResult is float {
+                storage = storageResult;
+            }
+        }
+        
+        string[]? networkParam = params["network"];
+        if networkParam is string[] && networkParam.length() > 0 {
+            float|error networkResult = float:fromString(networkParam[0]);
+            if networkResult is float {
+                network = networkResult;
+            }
+        }
+
+        // Generate resources and suggestions based on actual inputs
+        CloudResource[] resources = generateResourcesFromInputs(provider, vmHours, storage, network);
         AISuggestion[] suggestions = [];
 
         foreach var r in resources {
@@ -222,6 +401,10 @@ body {
     padding: 25px; margin-bottom: 25px; text-align: center;
 }
 h2 { color: #2c3e50; font-size: 2rem; margin-bottom: 10px; }
+.input-info { 
+    background: #ecf0f1; padding: 10px; border-radius: 8px; margin-bottom: 15px;
+    font-size: 0.9rem; color: #7f8c8d; text-align: center;
+}
 .suggestion { 
     background: rgba(255,255,255,0.9); border-radius: 12px; 
     padding: 20px; margin-bottom: 15px;
@@ -260,6 +443,9 @@ h2 { color: #2c3e50; font-size: 2rem; margin-bottom: 10px; }
     <div class="header">
         <h2>AI Suggestions</h2>
         <p>Smart optimization recommendations</p>
+        <div class="input-info">
+            Based on: ${provider} | VM: ${vmHours}h | Storage: ${storage}GB | Network: ${network}GB
+        </div>
     </div>`;
 
         foreach var suggestion in suggestions {
@@ -275,7 +461,7 @@ h2 { color: #2c3e50; font-size: 2rem; margin-bottom: 10px; }
         <div style="margin-bottom: 10px;">${suggestion.recommendation}</div>`;
         
         if suggestion.potentialSavings > 0.0 {
-            html += string `<div class="savings-amount">Save $${suggestion.potentialSavings}/month</div>`;
+            html += string `<div class="savings-amount">Save $${suggestion.potentialSavings.toString()}/month</div>`;
         }
         
         html += string `<div class="actions">
@@ -289,7 +475,7 @@ h2 { color: #2c3e50; font-size: 2rem; margin-bottom: 10px; }
         }
 
         html += string `
-    <a href="/" class="back-link">Back to Dashboard</a>
+    <a href="/?provider=${provider}&vm=${vmHours}&storage=${storage}&network=${network}" class="back-link">Back to Dashboard</a>
 </div>
 </body>
 </html>`;
@@ -300,7 +486,48 @@ h2 { color: #2c3e50; font-size: 2rem; margin-bottom: 10px; }
         return res;
     }
 
-    resource function get report() returns http:Response {
+    resource function get report(http:Request req) returns http:Response {
+        // Get parameters from URL
+        map<string[]> params = req.getQueryParams();
+        
+        string provider = "AWS";
+        float vmHours = 744.0;
+        float storage = 100.0;
+        float network = 50.0;
+        
+        // Extract parameters
+        string[]? providerParam = params["provider"];
+        if providerParam is string[] && providerParam.length() > 0 {
+            provider = providerParam[0];
+        }
+        
+        string[]? vmParam = params["vm"];
+        if vmParam is string[] && vmParam.length() > 0 {
+            float|error vmResult = float:fromString(vmParam[0]);
+            if vmResult is float {
+                vmHours = vmResult;
+            }
+        }
+        
+        string[]? storageParam = params["storage"];
+        if storageParam is string[] && storageParam.length() > 0 {
+            float|error storageResult = float:fromString(storageParam[0]);
+            if storageResult is float {
+                storage = storageResult;
+            }
+        }
+        
+        string[]? networkParam = params["network"];
+        if networkParam is string[] && networkParam.length() > 0 {
+            float|error networkResult = float:fromString(networkParam[0]);
+            if networkResult is float {
+                network = networkResult;
+            }
+        }
+
+        // Generate resources based on actual inputs
+        CloudResource[] resources = generateResourcesFromInputs(provider, vmHours, storage, network);
+
         string html = string `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -319,6 +546,10 @@ body {
     padding: 30px; backdrop-filter: blur(10px);
 }
 h2 { color: #2c3e50; text-align: center; margin-bottom: 25px; }
+.input-info { 
+    background: #ecf0f1; padding: 15px; border-radius: 8px; margin-bottom: 20px;
+    text-align: center; color: #7f8c8d;
+}
 .resource-table { 
     width: 100%; border-collapse: collapse; margin: 20px 0;
     border-radius: 10px; overflow: hidden;
@@ -342,6 +573,10 @@ h2 { color: #2c3e50; text-align: center; margin-bottom: 25px; }
     <div class="card">
         <h2>Cost Report</h2>
         
+        <div class="input-info">
+            <strong>Configuration:</strong> ${provider} | VM Hours: ${vmHours} | Storage: ${storage}GB | Network: ${network}GB
+        </div>
+        
         <table class="resource-table">
             <thead>
                 <tr>
@@ -349,6 +584,7 @@ h2 { color: #2c3e50; text-align: center; margin-bottom: 25px; }
                     <th>Type</th>
                     <th>CPU %</th>
                     <th>Memory %</th>
+                    <th>Storage %</th>
                     <th>Cost/Month</th>
                 </tr>
             </thead>
@@ -359,9 +595,10 @@ h2 { color: #2c3e50; text-align: center; margin-bottom: 25px; }
                 <tr>
                     <td><strong>${r.name}</strong><br><small>${r.id}</small></td>
                     <td>${r.resourceType}</td>
-                    <td>${r.cpuUsage}%</td>
-                    <td>${r.memoryUsage}%</td>
-                    <td>$${r.costPerMonth}</td>
+                    <td>${r.cpuUsage > 0.0 ? r.cpuUsage.toString() + "%" : "N/A"}</td>
+                    <td>${r.memoryUsage > 0.0 ? r.memoryUsage.toString() + "%" : "N/A"}</td>
+                    <td>${r.storageUsage > 0.0 ? r.storageUsage.toString() + "%" : "N/A"}</td>
+                    <td>$${r.costPerMonth.toString()}</td>
                 </tr>`;
         }
 
@@ -374,7 +611,7 @@ h2 { color: #2c3e50; text-align: center; margin-bottom: 25px; }
         </p>
     </div>
     
-    <a href="/" class="back-link">Back to Dashboard</a>
+    <a href="/?provider=${provider}&vm=${vmHours}&storage=${storage}&network=${network}" class="back-link">Back to Dashboard</a>
 </div>
 </body>
 </html>`;
@@ -385,7 +622,48 @@ h2 { color: #2c3e50; text-align: center; margin-bottom: 25px; }
         return res;
     }
 
-    resource function get resources() returns json {
+    resource function get resources(http:Request req) returns json {
+        // Get parameters from URL
+        map<string[]> params = req.getQueryParams();
+        
+        string provider = "AWS";
+        float vmHours = 744.0;
+        float storage = 100.0;
+        float network = 50.0;
+        
+        // Extract parameters
+        string[]? providerParam = params["provider"];
+        if providerParam is string[] && providerParam.length() > 0 {
+            provider = providerParam[0];
+        }
+        
+        string[]? vmParam = params["vm"];
+        if vmParam is string[] && vmParam.length() > 0 {
+            float|error vmResult = float:fromString(vmParam[0]);
+            if vmResult is float {
+                vmHours = vmResult;
+            }
+        }
+        
+        string[]? storageParam = params["storage"];
+        if storageParam is string[] && storageParam.length() > 0 {
+            float|error storageResult = float:fromString(storageParam[0]);
+            if storageResult is float {
+                storage = storageResult;
+            }
+        }
+        
+        string[]? networkParam = params["network"];
+        if networkParam is string[] && networkParam.length() > 0 {
+            float|error networkResult = float:fromString(networkParam[0]);
+            if networkResult is float {
+                network = networkResult;
+            }
+        }
+
+        // Generate resources based on actual inputs
+        CloudResource[] resources = generateResourcesFromInputs(provider, vmHours, storage, network);
+        
         AISuggestion[] suggestions = [];
         float totalCost = 0.0;
         float totalSavings = 0.0;
@@ -403,6 +681,12 @@ h2 { color: #2c3e50; text-align: center; margin-bottom: 25px; }
         return {
             "status": "success",
             "timestamp": time:utcToString(time:utcNow()),
+            "inputs": {
+                "provider": provider,
+                "vmHours": vmHours,
+                "storage": storage,
+                "network": network
+            },
             "summary": {
                 "totalCost": totalCost,
                 "potentialSavings": totalSavings,
