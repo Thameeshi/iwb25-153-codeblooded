@@ -14,7 +14,7 @@ isolated function getPricingg(string provider) returns map<float> {
     }
 }
 
-service / on new http:Listener(8080) {
+service / on new http:Listener(9090) {
     final map<json> sessions = {};
 
     resource function get .() returns http:Response {

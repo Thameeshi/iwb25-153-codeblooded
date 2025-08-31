@@ -47,8 +47,10 @@ service / on new http:Listener(8080) {
         .hero { text-align: center; color: white; margin: 4rem 0; }
         .hero h1 { font-size: 3.5rem; margin-bottom: 1rem; font-weight: 300; }
         .hero p { font-size: 1.3rem; opacity: 0.9; margin-bottom: 2rem; }
-        .cta-btn { background: #ff6b6b; color: white; padding: 1rem 2rem; border: none; border-radius: 50px; font-size: 1.1rem; cursor: pointer; transition: all 0.3s; text-decoration: none; display: inline-block; }
+        .cta-btn { background: #ff6b6b; color: white; padding: 1rem 2rem; border: none; border-radius: 50px; font-size: 1.1rem; cursor: pointer; transition: all 0.3s; text-decoration: none; display: inline-block; margin: 0.5rem; }
         .cta-btn:hover { background: #ff5252; transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+        .cta-btn.secondary { background: #27ae60; }
+        .cta-btn.secondary:hover { background: #219a52; }
         
         .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-top: 4rem; }
         .feature { background: rgba(255,255,255,0.1); padding: 2rem; border-radius: 15px; text-align: center; color: white; }
@@ -165,11 +167,21 @@ service / on new http:Listener(8080) {
             opacity: 0.8;
         }
         
+        /* Hero button container styles */
+        .hero-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 2rem;
+        }
+        
         @media (max-width: 768px) {
             .calc-grid { grid-template-columns: 1fr; }
             .hero h1 { font-size: 2.5rem; }
             .nav { flex-direction: column; gap: 1rem; }
             .nav-links { flex-wrap: wrap; justify-content: center; }
+            .hero-buttons { flex-direction: column; align-items: center; }
         }
     </style>
 </head>
@@ -199,7 +211,7 @@ service / on new http:Listener(8080) {
                 <a href="#" onclick="showPage('calculator')">Calculator</a>
                 <a href="#" onclick="showPage('about')">About</a>
                 <a href="#" onclick="showPage('contact')">Contact</a>
-                <a href="http://localhost:8081/" >Dashboard</a>
+                <a href="http://localhost:8081/" target="_blank">Dashboard</a>
             </div>
 
             <div class="auth-section">
@@ -217,7 +229,10 @@ service / on new http:Listener(8080) {
             <div class="hero">
                 <h1>Cloud Cost Optimization Made Simple</h1>
                 <p>Compare AWS, Azure & Google Cloud pricing instantly. Optimize your cloud spending with real-time cost analysis.</p>
-                <button class="cta-btn" onclick="showPage('calculator')">Start Optimizing</button>
+                <div class="hero-buttons">
+                    <button class="cta-btn" onclick="showPage('calculator')">Start Optimizing</button>
+                    <a href="http://localhost:8081/" target="_blank" class="cta-btn secondary">Go to Dashboard</a>
+                </div>
             </div>
             
             <div class="features">
@@ -235,6 +250,11 @@ service / on new http:Listener(8080) {
                     <div class="feature-icon">📈</div>
                     <h3>Visual Reports</h3>
                     <p>Beautiful charts and downloadable reports for easy analysis</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🎯</div>
+                    <h3>AI Recommendations</h3>
+                    <p>Smart suggestions to optimize your cloud resources and reduce costs</p>
                 </div>
             </div>
         </div>
@@ -314,6 +334,15 @@ service / on new http:Listener(8080) {
                     We provide real-time pricing comparisons across AWS, Azure, and Google Cloud to help you 
                     optimize your cloud spending and choose the most cost-effective solution for your needs.
                 </p>
+                <div style="margin-top: 2rem; padding: 1.5rem; background: #f8f9fa; border-radius: 10px;">
+                    <h3>Why Choose CloudOptimizer Pro?</h3>
+                    <ul style="margin-top: 1rem; color: #666; line-height: 1.8;">
+                        <li>Compare pricing across major cloud providers</li>
+                        <li>AI-powered optimization recommendations</li>
+                        <li>Real-time resource monitoring dashboard</li>
+                        <li>Detailed cost reports and analytics</li>
+                    </ul>
+                </div>
             </div>
         </div>
 
@@ -360,6 +389,7 @@ service / on new http:Listener(8080) {
                         <a href="#" onclick="showPage('calculator')">Calculator</a>
                         <a href="#" onclick="showPage('about')">About</a>
                         <a href="#" onclick="showPage('contact')">Contact</a>
+                        <a href="http://localhost:8081/" target="_blank">Dashboard</a>
                     </div>
                 </div>
                 <div class="footer-section">
@@ -546,7 +576,7 @@ service / on new http:Listener(8080) {
             }
         }
         
-        map<float> rates = getPricing(provider);
+        map<float> rates = getPricingg(provider);
         float vmRate = rates["vm"] ?: 0.05;
         float storageRate = rates["storage"] ?: 0.01;
         float networkRate = rates["network"] ?: 0.02;

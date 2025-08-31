@@ -5,7 +5,7 @@ isolated function formatPrice(float value) returns string {
     return value.toString();
 }
 
-isolated function getPricingg(string provider) returns map<float> {
+isolated function getPricing(string provider) returns map<float> {
     match provider {
         "AWS" => { return {"vm": 0.05, "storage": 0.01, "network": 0.02}; }
         "Azure" => { return {"vm": 0.045, "storage": 0.012, "network": 0.018}; }
@@ -28,7 +28,7 @@ service / on new http:Listener(8080) {
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif;  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
         
         .header { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); padding: 1rem 0; border-bottom: 1px solid rgba(255,255,255,0.2); position: relative; z-index: 100; }
         .nav { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; padding: 0 2rem; }
@@ -199,9 +199,7 @@ service / on new http:Listener(8080) {
                 <a href="#" onclick="showPage('calculator')">Calculator</a>
                 <a href="#" onclick="showPage('about')">About</a>
                 <a href="#" onclick="showPage('contact')">Contact</a>
-                <a href="http://localhost:8081/" >Dashboard</a>
             </div>
-
             <div class="auth-section">
                 <div id="userInfo" class="user-info" style="display:none;">
                     <span id="userName"></span>

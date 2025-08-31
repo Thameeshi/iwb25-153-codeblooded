@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Cost Optimizer Pro</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; background:#f5f7fa; margin:0; padding:0; }
+        .container { max-width:900px; margin:50px auto; background:#fff; padding:40px; border-radius:12px; box-shadow:0 0 20px rgba(0,0,0,0.1); }
+        h1 { text-align:center; color:#333; }
+        label, select { font-weight:bold; margin-top:15px; display:block; }
+        input { width:100%; padding:10px; margin-top:5px; border-radius:6px; border:1px solid #ccc; font-size:16px; }
+        button { margin-top:15px; padding:10px 20px; border-radius:6px; border:none; cursor:pointer; }
+        .calculate-btn { background-color:#007BFF; color:white; }
+        table { width:100%; margin-top:20px; border-collapse: collapse; }
+        th, td { padding:12px; border-bottom:1px solid #ddd; text-align:left; }
+        th { background-color:#007BFF; color:white; }
+        tr:nth-child(even){background-color:#f9f9f9}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Cloud Cost Optimizer Pro</h1>
+        <label>Cloud Provider:</label>
+        <select id="provider" onchange="calculateCost()">
+            <option>AWS</option>
+            <option>Google</option>
+        </select>
+
+        <label>VM Hours:</label><input id="vm" type="number" min="0" step="any" value="0" oninput="calculateCost()">
+        <label>Storage (GB):</label><input id="storage" type="number" min="0" step="any" value="0" oninput="calculateCost()">
+        <label>Network (GB):</label><input id="network" type="number" min="0" step="any" value="0" oninput="calculateCost()">
+
+        <table>
+            <tr><th>Resource</th><th>Cost ($)</th></tr>
+            <tr><td>VM</td><td id="vmCost">0.00</td></tr>
+            <tr><td>Storage</td><td id="storageCost">0.00</td></tr>
+            <tr><td>Network</td><td id="networkCost">0.00</td></tr>
+            <tr><th>Total</th><th id="totalCost">0.00</th></tr>
+        </table>
+
+        <p id="bestProvider" style="font-weight:bold; font-size:18px;"></p>
+
+        <canvas id="costChart" style="max-width:400px;margin-top:20px"></canvas>
+
+        <button class="calculate-btn" onclick="calculateCost(); return false;">Calculate</button>
+        <button class="calculate-btn" onclick="downloadReport(); return false;">Download Report</button>
+    </div>
+
+<script>
+function getPricing(provider) {
+    if(provider=='AWS') return {vm:0.05, storage:0.01, network:0.02};
+    else if(provider=='Google') return {vm:0.048, storage:0.011, network:0.019};
+}
+
+let chart;
+function calculateCost() {
+    let vm = parseFloat(document.getElementById('vm').value) || 0;
+    let storage = parseFloat(document.getElementById('storage').value) || 0;
+    let network = parseFloat(document.getElementById('network').value) || 0;
+    let provider = document.getElementById('provider').value;
+    let pricing = getPricing(provider);
+
+    let vmCost = vm * pricing.vm;
+    let storageCost = storage * pricing.storage;
+    let networkCost = network * pricing.network;
+    let total = vmCost + storageCost + networkCost;
+
+    document.getElementById('vmCost').innerText = vmCost.toFixed(2);
+    document.getElementById('storageCost').innerText = storageCost.toFixed(2);
+    document.getElementById('networkCost').innerText = networkCost.toFixed(2);
+    document.getElementById('totalCost').innerText = total.toFixed(2);
+
+    updateChart(vmCost, storageCost, networkCost);
+    showBestProvider(vm, storage, network);
+}
+
+function updateChart(vmCost, storageCost, networkCost) {
+    let ctx = document.getElementById('costChart').getContext('2d');
+    if(chart) chart.destroy();
+    chart = new Chart(ctx, {
+        type:'pie',
+        data:{ labels:['VM','Storage','Network'], datasets:[{data:[vmCost, storageCost, networkCost], backgroundColor:['#007BFF','#28a745','#dc3545']}] },
+        options:{responsive:true}
+    });
+}
+
+function showBestProvider(vm, storage, network) {
+    const providers = ['AWS', 'Google'];
+    let bestProvider = '';
+    let minCost = Number.MAX_VALUE;
+
+    for (let i = 0; i < providers.length; i++) {
+        let p = getPricing(providers[i]);
+        let cost = vm * p.vm + storage * p.storage + network * p.network;
+        if (cost < minCost) { minCost = cost; bestProvider = providers[i]; }
+    }
+
+    document.getElementById('bestProvider').innerText = 'Best Option: ' + bestProvider + ' ($' + minCost.toFixed(2) + ')';
+}
+
+function downloadReport() {
+    let vm = document.getElementById('vm').value || 0;
+    let storage = document.getElementById('storage').value || 0;
+    let network = document.getElementById('network').value || 0;
+    let provider = document.getElementById('provider').value;
+    window.location.href=`/downloadPdf?vmHours=${vm}&storageGB=${storage}&networkGB=${network}&provider=${provider}`;
+}
+</script>
+</body>
+</html>
