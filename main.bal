@@ -8,8 +8,8 @@ isolated function formatPrice(float value) returns string {
 isolated function getPricingg(string provider) returns map<float> {
     match provider {
         "AWS" => { return {"vm": 0.05, "storage": 0.01, "network": 0.02}; }
-        "Azure" => { return {"vm": 0.045, "storage": 0.012, "network": 0.018}; }
-        "Google" => { return {"vm": 0.048, "storage": 0.011, "network": 0.019}; }
+        "Azure" => { return {"vm": 0.042, "storage": 0.015, "network": 0.016}; }
+        "Google" => { return {"vm": 0.048, "storage": 0.008, "network": 0.025}; }
         _ => { return {"vm": 0.05, "storage": 0.01, "network": 0.02}; }
     }
 }
@@ -68,7 +68,9 @@ service / on new http:Listener(8080) {
         .result-item:last-child { border-bottom: none; font-weight: bold; font-size: 1.2rem; color: #667eea; }
         
         .chart-container { margin-top: 2rem; height: 300px; }
-        .download-btn { background: #28a745; color: white; padding: 0.8rem 1.5rem; border: none; border-radius: 10px; cursor: pointer; margin-top: 1rem; }
+        .download-btn, .dashboard-btn { background: #28a745; color: white; padding: 0.8rem 1.5rem; border: none; border-radius: 10px; cursor: pointer; margin-top: 1rem; margin-right: 1rem; }
+        .dashboard-btn { background: #667eea; }
+        .download-btn:hover, .dashboard-btn:hover { opacity: 0.9; }
         
         .auth-section { margin-left: auto; }
         .user-info { display: flex; align-items: center; gap: 1rem; color: white; }
@@ -171,6 +173,18 @@ service / on new http:Listener(8080) {
             .nav { flex-direction: column; gap: 1rem; }
             .nav-links { flex-wrap: wrap; justify-content: center; }
         }
+
+        .current-selection {
+            background: #e3f2fd;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            border-left: 4px solid #2196f3;
+        }
+        .current-selection h4 {
+            color: #1976d2;
+            margin-bottom: 0.5rem;
+        }
     </style>
 </head>
 <body>
@@ -199,7 +213,7 @@ service / on new http:Listener(8080) {
                 <a href="#" onclick="showPage('calculator')">Calculator</a>
                 <a href="#" onclick="showPage('about')">About</a>
                 <a href="#" onclick="showPage('contact')">Contact</a>
-                <a href="http://localhost:8081/" >Dashboard</a>
+                <a href="#" onclick="goToDashboard()">Dashboard</a>
             </div>
 
             <div class="auth-section">
@@ -275,6 +289,16 @@ service / on new http:Listener(8080) {
                     </div>
 
                     <div>
+                        <div class="current-selection">
+                            <h4>Current Selection</h4>
+                            <div id="selectionSummary">
+                                Provider: <span id="currentProvider">AWS</span><br>
+                                VM: <span id="currentVM">744</span> hours<br>
+                                Storage: <span id="currentStorage">100</span> GB<br>
+                                Network: <span id="currentNetwork">50</span> GB
+                            </div>
+                        </div>
+                        
                         <h3>Cost Breakdown</h3>
                         <div class="results">
                             <div class="result-item">
@@ -299,6 +323,7 @@ service / on new http:Listener(8080) {
                             <canvas id="costChart"></canvas>
                         </div>
                         
+                        <button class="dashboard-btn" onclick="goToDashboard()">Go to Advanced Dashboard</button>
                         <button class="download-btn" onclick="downloadReport()">Download Report</button>
                     </div>
                 </div>
@@ -388,8 +413,8 @@ service / on new http:Listener(8080) {
     <script>
         const pricing = {
             AWS: { vm: 0.05, storage: 0.01, network: 0.02 },
-            Azure: { vm: 0.045, storage: 0.012, network: 0.018 },
-            Google: { vm: 0.048, storage: 0.011, network: 0.019 }
+            Azure: { vm: 0.042, storage: 0.015, network: 0.016 },
+            Google: { vm: 0.048, storage: 0.008, network: 0.025 }
         };
 
         let chart;
@@ -400,6 +425,7 @@ service / on new http:Listener(8080) {
             if (sessionStorage.getItem('googleCredential')) {
                 handleLoginSuccess();
             }
+            calculate(); // Initial calculation
         };
 
         function handleGoogleLogin(response) {
@@ -449,6 +475,12 @@ service / on new http:Listener(8080) {
             const storage = parseFloat(document.getElementById('storage').value) || 0;
             const network = parseFloat(document.getElementById('network').value) || 0;
             
+            // Update current selection display
+            document.getElementById('currentProvider').textContent = provider;
+            document.getElementById('currentVM').textContent = vmHours;
+            document.getElementById('currentStorage').textContent = storage;
+            document.getElementById('currentNetwork').textContent = network;
+            
             const rates = pricing[provider];
             const vmCost = vmHours * rates.vm;
             const storageCost = storage * rates.storage;
@@ -461,6 +493,24 @@ service / on new http:Listener(8080) {
             document.getElementById('total').textContent = '$' + total.toFixed(2);
             
             updateChart(vmCost, storageCost, networkCost);
+        }
+
+        function goToDashboard() {
+            // Make sure to get current values
+            const provider = document.getElementById('provider').value;
+            const vmHours = document.getElementById('vmHours').value;
+            const storage = document.getElementById('storage').value;
+            const network = document.getElementById('network').value;
+            
+            console.log('Going to dashboard with:', { provider, vmHours, storage, network });
+            
+            const url = 'http://localhost:8081/?provider=' + encodeURIComponent(provider) + 
+                       '&vm=' + encodeURIComponent(vmHours) + 
+                       '&storage=' + encodeURIComponent(storage) + 
+                       '&network=' + encodeURIComponent(network);
+            
+            console.log('Dashboard URL:', url);
+            window.open(url, '_blank');
         }
 
         function updateChart(vm, storage, network) {
@@ -546,7 +596,7 @@ service / on new http:Listener(8080) {
             }
         }
         
-        map<float> rates = getPricing(provider);
+        map<float> rates = getPricingg(provider);
         float vmRate = rates["vm"] ?: 0.05;
         float storageRate = rates["storage"] ?: 0.01;
         float networkRate = rates["network"] ?: 0.02;

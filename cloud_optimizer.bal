@@ -23,9 +23,11 @@ function getPricing(string provider) returns map<float> {
     if provider == "AWS" {
         return {"vm": 0.05, "storage": 0.01, "network": 0.02};
     } else if provider == "Azure" {
-        return {"vm": 0.045, "storage": 0.012, "network": 0.018};
+        return {"vm": 0.042, "storage": 0.015, "network": 0.016};
     } else if provider == "Google" {
-        return {"vm": 0.048, "storage": 0.011, "network": 0.019};
+        return {"vm": 0.048, "storage": 0.008, "network": 0.025};
+    } else if provider == "GCP" {
+        return {"vm": 0.048, "storage": 0.008, "network": 0.025};
     }
     return {"vm": 0.05, "storage": 0.01, "network": 0.02};
 }
@@ -50,8 +52,8 @@ function generateResourcesFromInputs(string provider, float vmHours, float stora
     // VM Resource
     if vmHours > 0.0 {
         resources.push({
-            id: "vm-001",
-            name: provider + "-instance",
+            id: provider + "-vm-001",
+            name: provider + " VM Instance",
             resourceType: "VM",
             cpuUsage: simulatedCpuUsage,
             memoryUsage: simulatedMemoryUsage,
@@ -64,8 +66,8 @@ function generateResourcesFromInputs(string provider, float vmHours, float stora
     if storage > 0.0 {
         float storageUtilization = storage > 200.0 ? 85.0 : (storage > 50.0 ? 60.0 : 35.0);
         resources.push({
-            id: "storage-001",
-            name: provider + "-storage",
+            id: provider + "-storage-001",
+            name: provider + " Storage Bucket",
             resourceType: "Storage",
             cpuUsage: 0.0,
             memoryUsage: 0.0,
@@ -77,8 +79,8 @@ function generateResourcesFromInputs(string provider, float vmHours, float stora
     // Network Resource
     if network > 0.0 {
         resources.push({
-            id: "network-001",
-            name: provider + "-network",
+            id: provider + "-network-001",
+            name: provider + " Data Transfer",
             resourceType: "Network",
             cpuUsage: 0.0,
             memoryUsage: 0.0,
