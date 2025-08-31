@@ -285,7 +285,7 @@ h1 { color: #2c3e50; text-align: center; font-size: 2.5rem; margin-bottom: 10px;
 <body>
 <div class="container">
     <div class="card">
-        <a href="http://localhost:8080/" class="back-btn">← Back to Landing Page</a>
+        <a href="http://localhost:8080/" class="back-btn">← Back to Home Page</a>
         <h1>CloudOptimizer Pro</h1>
         <p class="subtitle">Smart Cloud Cost Management Dashboard</p>
         
