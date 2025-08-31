@@ -195,7 +195,7 @@ Cloud provider pricing is configurable in the `getPricing()` function:
 ### Debug Mode
 Enable debug logging by adding the `--debug` flag:
 ```bash
-bal run --debug landing_page.bal
+bal run --debug main.bal
 ```
 
 ## Contributing
@@ -213,4 +213,5 @@ This project was developed for the Innovate with Ballerina 2025 competition. For
 - Resource generation is optimized for quick response times
 - AI suggestions are computed dynamically based on usage patterns
 - All data processing is done in-memory for optimal performance
+
 
