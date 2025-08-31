@@ -78,7 +78,7 @@ project-root/
 ### 1. Start the Landing Page Service
 ```bash
 # In the project root directory
-bal run landing_page.bal
+bal run main.bal
 ```
 The landing page will be available at: `http://localhost:8080`
 
@@ -213,3 +213,4 @@ This project was developed for the Innovate with Ballerina 2025 competition. For
 - Resource generation is optimized for quick response times
 - AI suggestions are computed dynamically based on usage patterns
 - All data processing is done in-memory for optimal performance
+
